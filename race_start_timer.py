@@ -30,6 +30,8 @@ digits = [display_12 , display_9 , display_8 , display_6]
 for k in range (0,3):
     digits[k].value(1) #set all the multiplexer pins to be high. They are pulled low to address the digit
 
+sLock = _thread.allocate_lock() #a thread lock to stop issues where both threads try to access the same variable at once
+
 #define functions
 
 def stop(timer):
@@ -52,16 +54,20 @@ def toot_short():
     tom.init(mode=Timer.ONE_SHOT, period=500, callback=stop)
     
 def display_write():
-    global display_time
+    #global display_time
     global segments
     global digits
     truths = [[1,1,0,1,0,1,1,1],[0,0,0,1,0,1,0,0],[1,1,0,0,1,1,0,1],[0,1,0,1,1,1,0,1],[0,0,0,1,1,1,1,0],[0,1,0,1,1,0,1,1],[1,1,0,1,1,0,1,1],[0,0,0,1,0,1,0,1],[1,1,0,1,1,1,1,1],[0,0,0,1,1,1,1,1]]  #the truth table for  all the pin values to give each digit
     
     while True:
+        sLock.acquire()
+        global display_time
         for i in range (0,4):
             digits[i].value(0)
+            #sLock.acquire()
             digit = int(display_time[i])
             #print(display_time)
+            #sLock.release()
             #print(i)
             #print(digit)
             for j in range (0,8):
@@ -70,6 +76,7 @@ def display_write():
             for j in range (0,8):
                 segments[j].value(0)
             digits[i].value(1)
+        sLock.release()
             
         #print(display_time)
 
@@ -80,6 +87,7 @@ tim = Timer()#the timer for the main clock
 tom = Timer()#the timer for the toot length
 
 def tick(timer):#the periodic timer that increments the elapsed time by 1 second, prints the time, and checks whether a sound signal is needed
+    sLock.acquire()
     global elapsed
     global display_time
     elapsed += 1
@@ -93,7 +101,9 @@ def tick(timer):#the periodic timer that increments the elapsed time by 1 second
     if len(sec) == 1:
         sec = "0" + sec
     
+    #sLock.acquire()
     display_time = mint + sec
+    #sLock.release()
     
     print(mint, ':' , sec)
     #print(display_time)
@@ -106,7 +116,8 @@ def tick(timer):#the periodic timer that increments the elapsed time by 1 second
         toot_long()
     elif elapsed == 0:
         toot_short()
-    
+    sLock.release()
+
 #a separate thread on the other core to run the 7 seg display. 
 _thread.start_new_thread(display_write, ())
 
