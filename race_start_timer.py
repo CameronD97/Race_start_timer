@@ -6,7 +6,8 @@ import gc #garbage collector
 #define variables
 elapsed = int(-330) #the elapsed time from the start of the race. It starts at -5minutes and 30seconds
 display_time = str(1531) #the time to write to the display. This must be a 4 character string. This is using a global variable which is a slightly messy way of doing it
-restart_thread_counter = int(1000)
+restart_thread_counter = int(0)
+truths = [[1,1,0,1,0,1,1,1],[0,0,0,1,0,1,0,0],[1,1,0,0,1,1,0,1],[0,1,0,1,1,1,0,1],[0,0,0,1,1,1,1,0],[0,1,0,1,1,0,1,1],[1,1,0,1,1,0,1,1],[0,0,0,1,0,1,0,1],[1,1,0,1,1,1,1,1],[0,0,0,1,1,1,1,1]]  #the truth table for  all the pin values to give each digit
 
 #define pins
 led = Pin(25, Pin.OUT) #the LED on the board is on pin 25. Needs to be changed to the relay pin
@@ -59,11 +60,12 @@ def display_write():
     global display_time
     global segments
     global digits
-    truths = [[1,1,0,1,0,1,1,1],[0,0,0,1,0,1,0,0],[1,1,0,0,1,1,0,1],[0,1,0,1,1,1,0,1],[0,0,0,1,1,1,1,0],[0,1,0,1,1,0,1,1],[1,1,0,1,1,0,1,1],[0,0,0,1,0,1,0,1],[1,1,0,1,1,1,1,1],[0,0,0,1,1,1,1,1]]  #the truth table for  all the pin values to give each digit
+    global restart_thread_counter
+    global truths
+    #truths = [[1,1,0,1,0,1,1,1],[0,0,0,1,0,1,0,0],[1,1,0,0,1,1,0,1],[0,1,0,1,1,1,0,1],[0,0,0,1,1,1,1,0],[0,1,0,1,1,0,1,1],[1,1,0,1,1,0,1,1],[0,0,0,1,0,1,0,1],[1,1,0,1,1,1,1,1],[0,0,0,1,1,1,1,1]]  #the truth table for  all the pin values to give each digit
     
     while True:
         #sLock.acquire()
-        #global display_time
         for i in range (0,4):
             digits[i].value(0)
             sLock.acquire()
@@ -78,9 +80,12 @@ def display_write():
             for j in range (0,8):
                 segments[j].value(0)
             digits[i].value(1)
-            gc.collect()
+            #gc.collect()
         #sLock.release()
-            
+        restart_thread_counter -= 1
+        if restart_thread_counter == 0:
+            print("kill thread")
+            break
         #print(display_time)
 
         
@@ -93,7 +98,13 @@ def tick(timer):#the periodic timer that increments the elapsed time by 1 second
     #sLock.acquire()
     global elapsed
     global display_time
+    global restart_thread_counter
     elapsed += 1
+    
+    if restart_thread_counter <= 0: #This is to restart the second threadf after a certain length of time see discussion here: https://forums.raspberrypi.com/viewtopic.php?t=301156&sid=519271017fc956261080d1a6ef495a7b&start=25
+        time.sleep(0.001)
+        #_thread.start_new_thread(display_write, ())
+        restart_thread_counter = 10000
     
     #micropython has no zfill(). This ensures the minutes ad seconds are not one digits by adding preceding 0s. This programm isn't designed to work after 99 minutes
     mint = str(abs(elapsed)//60) #mint is minutes because min is already a function
@@ -106,12 +117,13 @@ def tick(timer):#the periodic timer that increments the elapsed time by 1 second
     
     sLock.acquire()
     display_time = mint + sec
+    #print(display_time)
     sLock.release()
     
     print(mint, ':' , sec)
-    #print(display_time)
-    print(gc.mem_free())
-    gc.collect()
+    
+    #print(gc.mem_free())
+    gc.collect() #it leaks memory from somewhere if we dodn't do any garbage collection
     print(gc.mem_free())
       
     if elapsed == -300:
@@ -125,10 +137,21 @@ def tick(timer):#the periodic timer that increments the elapsed time by 1 second
     #sLock.release()
 
 #a separate thread on the other core to run the 7 seg display. 
-_thread.start_new_thread(display_write, ())
+#_thread.start_new_thread(display_write, ()) #it currently crashes after a semi random length of time with the display running in a separate thread. Multi processing in Micropython is currently "highly experimental and its API is not yet fully settled and not yet described in this [https://docs.micropython.org/en/latest/library/_thread.html] documentation" 
 
 tim.init(freq=1, mode=Timer.PERIODIC, callback=tick) #calls the periodic timer with a frequency of 1Hz
 
-#hardware interrupt(rising edge on a pin) to end the timer Timer.deinit(tim)
-#hardware interrupt to take you back to the beginning of a while loop, reset elapsed, and start again
+#add a hardware interrupt(rising edge on a pin) to end the timer Timer.deinit(tim)
+#add a hardware interrupt to take you back to the beginning of a while loop, reset elapsed, and start again
+
+while True:
+    for i in range (0,4):
+        digits[i].value(0)
+        digit = int(display_time[i])
+        for j in range (0,8):
+            segments[j].value((truths[digit][j]))
+        time.sleep(0.00015)
+        for j in range (0,8):
+            segments[j].value(0)
+        digits[i].value(1)
 
