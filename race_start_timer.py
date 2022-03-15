@@ -5,7 +5,7 @@ import gc #garbage collector
 
 #define variables
 elapsed = int(-330) #the elapsed time from the start of the race. It starts at -5minutes and 30seconds
-display_time = str(1531) #the time to write to the display. This must be a 4 character string. This is using a global variable which is a slightly messy way of doing it
+display_time = str(8888) #the time to write to the display. This must be a 4 character string. This is using a global variable which is a slightly messy way of doing it
 restart_thread_counter = int(0)
 truths = [[1,1,0,1,0,1,1,1],[0,0,0,1,0,1,0,0],[1,1,0,0,1,1,0,1],[0,1,0,1,1,1,0,1],[0,0,0,1,1,1,1,0],[0,1,0,1,1,0,1,1],[1,1,0,1,1,0,1,1],[0,0,0,1,0,1,0,1],[1,1,0,1,1,1,1,1],[0,0,0,1,1,1,1,1]]  #the truth table for  all the pin values to give each digit
 
@@ -150,7 +150,9 @@ while True:
         digit = int(display_time[i])
         for j in range (0,8):
             segments[j].value((truths[digit][j]))
-        time.sleep(0.00015)
+        if i == 1:
+            segments[2].value(1)
+        time.sleep(0.0015)
         for j in range (0,8):
             segments[j].value(0)
         digits[i].value(1)
