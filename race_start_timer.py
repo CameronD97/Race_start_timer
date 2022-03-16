@@ -14,7 +14,6 @@ truths = [[1,1,0,1,0,1,1,1],[0,0,0,1,0,1,0,0],[1,1,0,0,1,1,0,1],[0,1,0,1,1,1,0,1
 play = False 
 
 
-
 #########define pins#########
 
 led = Pin(25, Pin.OUT) #the LED on the board is on pin 25. Needs to be changed to the relay pin
@@ -72,6 +71,7 @@ def play_button(pin):
     global play
     play = not play
     print(play)
+
     
 def reset_button(pin):
     global elapsed
@@ -80,6 +80,7 @@ def reset_button(pin):
     if play == False:
         elapsed = int(-330)
         print("elapsed has been reset")
+
 
 # def display_write():
 #     global display_time
