@@ -12,7 +12,7 @@ display_time = str(8888) #the time to write to the display. This must be a 4 cha
 restart_thread_counter = int(0)
 truths = [[1,1,0,1,0,1,1,1],[0,0,0,1,0,1,0,0],[1,1,0,0,1,1,0,1],[0,1,0,1,1,1,0,1],[0,0,0,1,1,1,1,0],[0,1,0,1,1,0,1,1],[1,1,0,1,1,0,1,1],[0,0,0,1,0,1,0,1],[1,1,0,1,1,1,1,1],[0,0,0,1,1,1,1,1]]  #the truth table for  all the pin values to give each digit
 play = False 
-
+bouncing = False
 
 #########define pins#########
 
@@ -49,6 +49,12 @@ reset_pin = Pin(14, Pin.IN, Pin.PULL_DOWN)
 
 #########define functions###########
 
+def end_bounce(timer):
+    global bouncing
+    bouncing = False
+    print("bouncing", bouncing)
+    pass
+
 def stop(timer):
     led.value(0)
     relay.value(0)
@@ -69,8 +75,14 @@ def toot_short():
     
 def play_button(pin):
     global play
-    play = not play
-    print(play)
+    global bouncing
+    print("A")
+    if bouncing == False:
+        print("B")
+        bouncing = True
+        play = not play
+        print(play)
+        bounce.init(mode=Timer.ONE_SHOT, period=200, callback=end_bounce)
 
     
 def reset_button(pin):
@@ -119,6 +131,7 @@ def reset_button(pin):
 
 tim = Timer()#the timer for the main clock
 tom = Timer()#the timer for the toot length
+bounce = Timer()
 
 def tick(timer):#the periodic timer that increments the elapsed time by 1 second, prints the time, and checks whether a sound signal is needed
     #sLock.acquire()
@@ -171,6 +184,8 @@ def tick(timer):#the periodic timer that increments the elapsed time by 1 second
 tim.init(freq=1, mode=Timer.PERIODIC, callback=tick) #calls the periodic timer with a frequency of 1Hz. This is the main clock part of the code
 
 start_stop.irq(trigger = Pin.IRQ_RISING, handler = play_button) #hardware interrupt for the start/stop button
+
+
 
 reset_pin.irq(trigger = Pin.IRQ_RISING, handler = reset_button) #hardware interrupt for the reset button
 
