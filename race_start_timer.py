@@ -17,31 +17,34 @@ bouncing = False
 #########define pins#########
 
 led = Pin(25, Pin.OUT) #the LED on the board is on pin 25. Needs to be changed to the relay pin
-relay = Pin(0, Pin.OUT) #the GPIO pin to connect the relay for the hooter to
+relay = Pin(14, Pin.OUT) #the GPIO pin to connect the relay for the hooter to
+relay2 = Pin(16, Pin.OUT)
+relay3 = Pin(16, Pin.OUT) #the three relay pins are connected because one couldn't do the current needed to drive the relay. This would be better solved by using an optocoupley ore a transistor to drive the relay
+
 
 #defining the pins used for the display
-display_1 = Pin(1, Pin.OUT)
-display_2 = Pin(2, Pin.OUT)
-display_3 = Pin(3, Pin.OUT)
-display_4 = Pin(4, Pin.OUT)
-display_5 = Pin(5, Pin.OUT)
-display_7 = Pin(6, Pin.OUT)
-display_10 = Pin(7, Pin.OUT)
-display_11 = Pin(8, Pin.OUT)
+display_1 = Pin(10, Pin.OUT)
+display_2 = Pin(9, Pin.OUT)
+display_3 = Pin(8, Pin.OUT)
+display_4 = Pin(7, Pin.OUT)
+display_5 = Pin(6, Pin.OUT)
+display_7 = Pin(1, Pin.OUT)
+display_10 = Pin(11, Pin.OUT)
+display_11 = Pin(12, Pin.OUT)
 
 segments = [display_1 , display_2 , display_3 , display_4 , display_5 , display_7 , display_10 , display_11]
 
-display_12 = Pin(9, Pin.OUT)
-display_9 = Pin(10, Pin.OUT)
-display_8 = Pin(11, Pin.OUT)
-display_6 = Pin(12, Pin.OUT)
+display_12 = Pin(13, Pin.OUT)
+display_9 = Pin(3, Pin.OUT)
+display_8 = Pin(2, Pin.OUT)
+display_6 = Pin(5, Pin.OUT)
 
 digits = [display_12 , display_9 , display_8 , display_6]
 for k in range (0,3):
     digits[k].value(1) #set all the multiplexer pins to be high. They are pulled low to address the digit
 
-start_stop = Pin(13, Pin.IN, Pin.PULL_DOWN)
-reset_pin = Pin(14, Pin.IN, Pin.PULL_DOWN)
+start_stop = Pin(0, Pin.IN, Pin.PULL_DOWN)
+reset_pin = Pin(15, Pin.IN, Pin.PULL_DOWN)
 
 #sLock = _thread.allocate_lock() #a thread lock to stop issues where both threads try to access the same variable at once
 
@@ -52,46 +55,52 @@ reset_pin = Pin(14, Pin.IN, Pin.PULL_DOWN)
 def end_bounce(timer):
     global bouncing
     bouncing = False
-    print("bouncing", bouncing)
+    #print("bouncing", bouncing)
     pass
 
 def stop(timer):
     led.value(0)
     relay.value(0)
+    relay2.value(0)
+    relay3.value(0)
     pass
     #Timer.deinit(t)
 
 def toot_long():
-    print('Toooooot')
+    #print('Toooooot')
     led.value(1)
     relay.value(1)
+    relay2.value(1)
+    relay3.value(1)
     tom.init(mode=Timer.ONE_SHOT, period=1500, callback=stop) #this is better than using time.sleep because it means other stuff can carry on while the hooter is on
     
 def toot_short():
-    print('toot')
+    #print('toot')
     led.value(1)
     relay.value(1)
-    tom.init(mode=Timer.ONE_SHOT, period=500, callback=stop)
+    relay2.value(1)
+    relay3.value(1)
+    tom.init(mode=Timer.ONE_SHOT, period=1000, callback=stop)
     
 def play_button(pin):
     global play
     global bouncing
-    print("A")
+    #print("A")
     if bouncing == False:
-        print("B")
+        #print("B")
         bouncing = True
         play = not play
-        print(play)
+        #print(play)
         bounce.init(mode=Timer.ONE_SHOT, period=200, callback=end_bounce)
 
     
 def reset_button(pin):
     global elapsed
     global play
-    print("reset pressed")
+    #print("reset pressed")
     if play == False:
         elapsed = int(-330)
-        print("elapsed has been reset")
+        #print("elapsed has been reset")
 
 
 # def display_write():
@@ -161,7 +170,7 @@ def tick(timer):#the periodic timer that increments the elapsed time by 1 second
     #print(display_time)
     #sLock.release()
     
-    print(mint, ':' , sec)
+    #print(mint, ':' , sec)
     
     #print(gc.mem_free())
     gc.collect() #it leaks memory from somewhere if we dodn't do any garbage collection
