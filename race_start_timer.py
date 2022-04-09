@@ -166,7 +166,8 @@ def tick(timer):#the periodic timer that increments the elapsed time by 1 second
         sec = "0" + sec
     
     #sLock.acquire()
-    display_time = mint + sec
+    if reset_pin.value() == 0:
+        display_time = mint + sec
     #print(display_time)
     #sLock.release()
     
